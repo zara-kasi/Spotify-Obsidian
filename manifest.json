@@ -1,0 +1,10 @@
+{
+  "id": "spotify-integration",
+  "name": "Spotify Integration",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Integrate Spotify tracks, albums, artists, and playlists into your Obsidian notes with rich previews and playback controls.",
+  "author": "Your Name",
+  "authorUrl": "https://github.com/zara-kasi",
+  "isDesktopOnly": false,
+}
