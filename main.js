@@ -346,12 +346,17 @@ async authenticateSpotify() {
   }
 
   // ===================== RENDERING =====================
-
- // ===================== RENDERING =====================
+// ===================== FIXED RENDERING METHODS =====================
 
 renderSpotifyData(el, data, config) {
   this.emptyElement(el);
-  el.className = `spotify-container spotify-layout-${config.layout || this.settings.defaultLayout}`;
+  const layout = config.layout || this.settings.defaultLayout;
+  el.className = `spotify-container spotify-layout-${layout}`;
+  
+  // Apply grid columns if using grid layout
+  if (layout === 'grid') {
+    el.style.setProperty('--grid-columns', this.settings.gridColumns);
+  }
   
   try {
     switch (config.type) {
@@ -378,42 +383,84 @@ renderSpotifyData(el, data, config) {
 renderTrack(el, track, config) {
   const layout = config.layout || this.settings.defaultLayout;
   
-  // Create grid container for card layout
-  const container = layout === 'card' ? 
-    document.createElement('div') : 
-    document.createElement('div');
+  const trackEl = document.createElement('div');
+  trackEl.className = `spotify-track spotify-${layout}`;
   
-  if (layout === 'card') {
-    container.className = 'spotify-results-grid';
-  } else {
-    container.className = `spotify-track spotify-${layout}`;
+  // Layout-specific styling
+  if (layout === 'inline') {
+    trackEl.style.display = 'inline-flex';
+    trackEl.style.alignItems = 'center';
+    trackEl.style.gap = '8px';
+  } else if (layout === 'list') {
+    trackEl.style.display = 'flex';
+    trackEl.style.alignItems = 'center';
+    trackEl.style.gap = '12px';
+    trackEl.style.padding = '8px';
+    trackEl.style.borderBottom = '1px solid var(--background-modifier-border)';
+  } else if (layout === 'card' || layout === 'grid') {
+    trackEl.style.display = 'flex';
+    trackEl.style.flexDirection = 'column';
+    trackEl.style.padding = '12px';
+    trackEl.style.border = '1px solid var(--background-modifier-border)';
+    trackEl.style.borderRadius = '8px';
   }
   
-  const trackEl = document.createElement('div');
-  trackEl.className = layout === 'card' ? 
-    `spotify-track spotify-${layout}` : 
-    'spotify-track-item';
-  
-  // For grid and card layouts, show album art prominently
-  if (this.settings.showAlbumArt && track.album?.images?.[0] && (layout === 'card' || layout === 'grid')) {
+  // Album art
+  if (this.settings.showAlbumArt && track.album?.images?.[0]) {
     const img = document.createElement('img');
     img.src = track.album.images[0].url;
     img.className = 'spotify-album-art';
+    
+    if (layout === 'inline') {
+      img.style.width = '32px';
+      img.style.height = '32px';
+    } else if (layout === 'list') {
+      img.style.width = '48px';
+      img.style.height = '48px';
+    } else {
+      img.style.width = '100%';
+      img.style.aspectRatio = '1';
+      img.style.objectFit = 'cover';
+    }
+    
     trackEl.appendChild(img);
   }
   
   const info = document.createElement('div');
   info.className = 'spotify-track-info';
   
+  if (layout === 'list') {
+    info.style.flex = '1';
+    info.style.display = 'flex';
+    info.style.alignItems = 'center';
+    info.style.gap = '16px';
+  } else if (layout === 'inline') {
+    info.style.display = 'flex';
+    info.style.alignItems = 'center';
+    info.style.gap = '8px';
+  }
+  
   const title = document.createElement('div');
   title.className = 'spotify-track-title';
   title.textContent = track.name;
+  title.style.fontWeight = 'bold';
+  
+  if (layout === 'list') {
+    title.style.flex = '1';
+  }
+  
   info.appendChild(title);
   
   if (this.settings.showArtist) {
     const artist = document.createElement('div');
     artist.className = 'spotify-track-artist';
     artist.textContent = track.artists.map(a => a.name).join(', ');
+    artist.style.color = 'var(--text-muted)';
+    
+    if (layout === 'list') {
+      artist.style.flex = '1';
+    }
+    
     info.appendChild(artist);
   }
   
@@ -421,120 +468,169 @@ renderTrack(el, track, config) {
     const album = document.createElement('div');
     album.className = 'spotify-track-album';
     album.textContent = track.album.name;
+    album.style.color = 'var(--text-muted)';
+    album.style.fontSize = '0.9em';
+    
+    if (layout === 'list') {
+      album.style.flex = '1';
+    }
+    
     info.appendChild(album);
   }
   
-  // For list and inline layouts, show duration inline
   if (this.settings.showDuration && track.duration_ms) {
     const duration = document.createElement('div');
     duration.className = 'spotify-track-duration';
     duration.textContent = this.formatDuration(track.duration_ms);
-    if (layout === 'list' || layout === 'inline') {
+    duration.style.color = 'var(--text-muted)';
+    duration.style.fontSize = '0.9em';
+    
+    if (layout === 'list') {
       duration.style.marginLeft = 'auto';
     }
+    
     info.appendChild(duration);
   }
   
   if (this.settings.showPopularity && track.popularity) {
     const popularity = document.createElement('div');
     popularity.className = 'spotify-track-popularity';
-    popularity.textContent = `Popularity: ${track.popularity}%`;
+    popularity.textContent = `${track.popularity}%`;
+    popularity.style.color = 'var(--text-muted)';
+    popularity.style.fontSize = '0.8em';
     info.appendChild(popularity);
   }
   
   trackEl.appendChild(info);
   
-  if (layout === 'card') {
-    container.appendChild(trackEl);
-    el.appendChild(container);
-  } else {
-    container.appendChild(trackEl);
-    el.appendChild(container);
+  // Apply grid layout if needed
+  if (layout === 'grid') {
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = `repeat(${this.settings.gridColumns}, 1fr)`;
+    el.style.gap = '16px';
   }
+  
+  el.appendChild(trackEl);
 }
 
 renderAlbum(el, album, config) {
   const layout = config.layout || this.settings.defaultLayout;
   
-  // Create grid container for card layout
-  const container = layout === 'card' ? 
-    document.createElement('div') : 
-    document.createElement('div');
-  
-  if (layout === 'card') {
-    container.className = 'spotify-results-grid';
-  } else {
-    container.className = `spotify-album spotify-${layout}`;
-  }
-  
   const albumEl = document.createElement('div');
-  albumEl.className = layout === 'card' ? 
-    `spotify-album spotify-${layout}` : 
-    'spotify-album-content';
+  albumEl.className = `spotify-album spotify-${layout}`;
+  
+  // Layout-specific styling
+  if (layout === 'card' || layout === 'grid') {
+    albumEl.style.display = 'flex';
+    albumEl.style.flexDirection = 'column';
+    albumEl.style.padding = '12px';
+    albumEl.style.border = '1px solid var(--background-modifier-border)';
+    albumEl.style.borderRadius = '8px';
+  }
   
   const header = document.createElement('div');
   header.className = 'spotify-album-header';
+  header.style.display = 'flex';
+  header.style.gap = '12px';
+  header.style.alignItems = 'flex-start';
   
   if (this.settings.showAlbumArt && album.images?.[0]) {
     const img = document.createElement('img');
     img.src = album.images[0].url;
     img.className = 'spotify-album-art';
+    
+    if (layout === 'card' || layout === 'grid') {
+      img.style.width = '100%';
+      img.style.aspectRatio = '1';
+      img.style.objectFit = 'cover';
+      img.style.marginBottom = '12px';
+    } else {
+      img.style.width = '80px';
+      img.style.height = '80px';
+      img.style.objectFit = 'cover';
+    }
+    
     header.appendChild(img);
   }
   
   const info = document.createElement('div');
   info.className = 'spotify-album-info';
+  info.style.flex = '1';
   
   const title = document.createElement('h3');
   title.className = 'spotify-album-title';
   title.textContent = album.name;
+  title.style.margin = '0 0 8px 0';
+  title.style.fontWeight = 'bold';
   info.appendChild(title);
   
   if (this.settings.showArtist) {
     const artist = document.createElement('div');
     artist.className = 'spotify-album-artist';
     artist.textContent = album.artists.map(a => a.name).join(', ');
+    artist.style.color = 'var(--text-muted)';
+    artist.style.marginBottom = '4px';
     info.appendChild(artist);
   }
   
   const releaseDate = document.createElement('div');
   releaseDate.className = 'spotify-album-release-date';
   releaseDate.textContent = `Released: ${album.release_date}`;
+  releaseDate.style.color = 'var(--text-muted)';
+  releaseDate.style.fontSize = '0.9em';
+  releaseDate.style.marginBottom = '4px';
   info.appendChild(releaseDate);
   
   const trackCount = document.createElement('div');
   trackCount.className = 'spotify-album-track-count';
   trackCount.textContent = `${album.total_tracks} tracks`;
+  trackCount.style.color = 'var(--text-muted)';
+  trackCount.style.fontSize = '0.9em';
   info.appendChild(trackCount);
   
   header.appendChild(info);
   albumEl.appendChild(header);
   
-  // Render tracks if available (only for non-card layouts to avoid cluttering)
+  // Render tracks if available and not card layout
   if (album.tracks?.items?.length > 0 && layout !== 'card') {
     const tracksList = document.createElement('div');
-    tracksList.className = `spotify-album-tracks spotify-tracks-${layout}`;
+    tracksList.className = `spotify-album-tracks`;
+    tracksList.style.marginTop = '16px';
     
-    album.tracks.items.forEach((track, index) => {
+    // Apply max results limit
+    const tracksToShow = album.tracks.items.slice(0, this.settings.maxResults);
+    
+    tracksToShow.forEach((track, index) => {
       const trackItem = document.createElement('div');
       trackItem.className = 'spotify-album-track-item';
+      trackItem.style.display = 'flex';
+      trackItem.style.alignItems = 'center';
+      trackItem.style.padding = '4px 0';
+      trackItem.style.borderBottom = '1px solid var(--background-modifier-border-light)';
       
       const trackNumber = document.createElement('div');
       trackNumber.className = 'spotify-track-number';
       trackNumber.textContent = (index + 1).toString();
+      trackNumber.style.width = '24px';
+      trackNumber.style.color = 'var(--text-muted)';
+      trackNumber.style.fontSize = '0.9em';
       trackItem.appendChild(trackNumber);
       
       const trackInfo = document.createElement('div');
       trackInfo.className = 'spotify-track-info';
+      trackInfo.style.flex = '1';
       
       const trackTitle = document.createElement('div');
       trackTitle.className = 'spotify-track-title';
       trackTitle.textContent = track.name;
+      trackTitle.style.fontWeight = '500';
       trackInfo.appendChild(trackTitle);
       
       const trackArtist = document.createElement('div');
       trackArtist.className = 'spotify-track-artist';
       trackArtist.textContent = track.artists.map(a => a.name).join(', ');
+      trackArtist.style.color = 'var(--text-muted)';
+      trackArtist.style.fontSize = '0.9em';
       trackInfo.appendChild(trackArtist);
       
       trackItem.appendChild(trackInfo);
@@ -543,6 +639,8 @@ renderAlbum(el, album, config) {
         const duration = document.createElement('div');
         duration.className = 'spotify-track-duration';
         duration.textContent = this.formatDuration(track.duration_ms);
+        duration.style.color = 'var(--text-muted)';
+        duration.style.fontSize = '0.9em';
         trackItem.appendChild(duration);
       }
       
@@ -552,258 +650,14 @@ renderAlbum(el, album, config) {
     albumEl.appendChild(tracksList);
   }
   
-  if (layout === 'card') {
-    container.appendChild(albumEl);
-    el.appendChild(container);
-  } else {
-    container.appendChild(albumEl);
-    el.appendChild(container);
-  }
-}
-
-renderArtist(el, artist, config) {
-  const layout = config.layout || this.settings.defaultLayout;
-  
-  // Create grid container for card layout
-  const container = layout === 'card' ? 
-    document.createElement('div') : 
-    document.createElement('div');
-  
-  if (layout === 'card') {
-    container.className = 'spotify-results-grid';
-  } else {
-    container.className = `spotify-artist spotify-${layout}`;
+  // Apply grid layout if needed
+  if (layout === 'grid') {
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = `repeat(${this.settings.gridColumns}, 1fr)`;
+    el.style.gap = '16px';
   }
   
-  const artistEl = document.createElement('div');
-  artistEl.className = layout === 'card' ? 
-    `spotify-artist spotify-${layout}` : 
-    'spotify-artist-content';
-  
-  const header = document.createElement('div');
-  header.className = 'spotify-artist-header';
-  
-  if (this.settings.showAlbumArt && artist.images?.[0]) {
-    const img = document.createElement('img');
-    img.src = artist.images[0].url;
-    img.className = 'spotify-artist-image';
-    header.appendChild(img);
-  }
-  
-  const info = document.createElement('div');
-  info.className = 'spotify-artist-info';
-  
-  const title = document.createElement('h3');
-  title.className = 'spotify-artist-title';
-  title.textContent = artist.name;
-  info.appendChild(title);
-  
-  const followers = document.createElement('div');
-  followers.className = 'spotify-artist-followers';
-  followers.textContent = `${artist.followers.total.toLocaleString()} followers`;
-  info.appendChild(followers);
-  
-  if (this.settings.showGenres && artist.genres?.length > 0) {
-    const genres = document.createElement('div');
-    genres.className = 'spotify-artist-genres';
-    genres.textContent = `Genres: ${artist.genres.join(', ')}`;
-    info.appendChild(genres);
-  }
-  
-  if (this.settings.showPopularity && artist.popularity) {
-    const popularity = document.createElement('div');
-    popularity.className = 'spotify-artist-popularity';
-    popularity.textContent = `Popularity: ${artist.popularity}%`;
-    info.appendChild(popularity);
-  }
-  
-  header.appendChild(info);
-  artistEl.appendChild(header);
-
-  // Render top tracks if available (only for non-card layouts to avoid cluttering)
-  if (artist.topTracks?.length > 0 && layout !== 'card') {
-    const topTracksSection = document.createElement('div');
-    topTracksSection.className = 'spotify-artist-top-tracks';
-    
-    const topTracksTitle = document.createElement('h4');
-    topTracksTitle.textContent = 'Top Tracks';
-    topTracksSection.appendChild(topTracksTitle);
-    
-    const tracksList = document.createElement('div');
-    tracksList.className = `spotify-artist-tracks-list spotify-tracks-${layout}`;
-    
-    const tracksToShow = layout === 'grid' ? 
-      artist.topTracks.slice(0, 4) : 
-      artist.topTracks.slice(0, 5);
-    
-    tracksToShow.forEach((track, index) => {
-      const trackItem = document.createElement('div');
-      trackItem.className = 'spotify-artist-track-item';
-      
-      if (layout === 'list') {
-        const trackNumber = document.createElement('div');
-        trackNumber.className = 'spotify-track-number';
-        trackNumber.textContent = (index + 1).toString();
-        trackItem.appendChild(trackNumber);
-      }
-      
-      const trackInfo = document.createElement('div');
-      trackInfo.className = 'spotify-track-info';
-      
-      const trackTitle = document.createElement('div');
-      trackTitle.className = 'spotify-track-title';
-      trackTitle.textContent = track.name;
-      trackInfo.appendChild(trackTitle);
-      
-      if (track.album) {
-        const trackAlbum = document.createElement('div');
-        trackAlbum.className = 'spotify-track-album';
-        trackAlbum.textContent = track.album.name;
-        trackInfo.appendChild(trackAlbum);
-      }
-      
-      trackItem.appendChild(trackInfo);
-
-      if (this.settings.showDuration && track.duration_ms) {
-        const duration = document.createElement('div');
-        duration.className = 'spotify-track-duration';
-        duration.textContent = this.formatDuration(track.duration_ms);
-        trackItem.appendChild(duration);
-      }
-      
-      tracksList.appendChild(trackItem);
-    });
-    
-    topTracksSection.appendChild(tracksList);
-    artistEl.appendChild(topTracksSection);
-  }
-  
-  if (layout === 'card') {
-    container.appendChild(artistEl);
-    el.appendChild(container);
-  } else {
-    container.appendChild(artistEl);
-    el.appendChild(container);
-  }
-}
-
-renderPlaylist(el, playlist, config) {
-  const layout = config.layout || this.settings.defaultLayout;
-  
-  // Create grid container for card layout
-  const container = layout === 'card' ? 
-    document.createElement('div') : 
-    document.createElement('div');
-  
-  if (layout === 'card') {
-    container.className = 'spotify-results-grid';
-  } else {
-    container.className = `spotify-playlist spotify-${layout}`;
-  }
-  
-  const playlistEl = document.createElement('div');
-  playlistEl.className = layout === 'card' ? 
-    `spotify-playlist spotify-${layout}` : 
-    'spotify-playlist-content';
-  
-  // Playlist header
-  const header = document.createElement('div');
-  header.className = 'spotify-playlist-header';
-  
-  if (this.settings.showAlbumArt && playlist.images?.[0]) {
-    const img = document.createElement('img');
-    img.src = playlist.images[0].url;
-    img.className = 'spotify-playlist-art';
-    header.appendChild(img);
-  }
-  
-  const info = document.createElement('div');
-  info.className = 'spotify-playlist-info';
-  
-  const title = document.createElement('h3');
-  title.className = 'spotify-playlist-title';
-  title.textContent = playlist.name;
-  info.appendChild(title);
-  
-  const owner = document.createElement('div');
-  owner.className = 'spotify-playlist-owner';
-  owner.textContent = `by ${playlist.owner.display_name}`;
-  info.appendChild(owner);
-  
-  const trackCount = document.createElement('div');
-  trackCount.className = 'spotify-playlist-count';
-  trackCount.textContent = `${playlist.tracks.total} tracks`;
-  info.appendChild(trackCount);
-  
-  if (playlist.description && layout !== 'card') {
-    const description = document.createElement('div');
-    description.className = 'spotify-playlist-description';
-    description.textContent = playlist.description;
-    info.appendChild(description);
-  }
-  
-  header.appendChild(info);
-  playlistEl.appendChild(header);
-  
-  // Playlist tracks (only for non-card layouts to avoid cluttering)
-  if (playlist.tracks?.items?.length > 0 && layout !== 'card') {
-    const tracksList = document.createElement('div');
-    tracksList.className = `spotify-playlist-tracks spotify-tracks-${layout}`;
-    
-    // For grid layout, limit tracks shown and use different styling
-    const tracksToShow = layout === 'grid' ? 
-      playlist.tracks.items.slice(0, 6) : 
-      playlist.tracks.items;
-    
-    tracksToShow.forEach((item, index) => {
-      if (item.track) {
-        const trackItem = document.createElement('div');
-        trackItem.className = 'spotify-playlist-track-item';
-        
-        // Only show track numbers for list layout
-        if (layout === 'list') {
-          const trackNumber = document.createElement('div');
-          trackNumber.className = 'spotify-track-number';
-          trackNumber.textContent = (index + 1).toString();
-          trackItem.appendChild(trackNumber);
-        }
-        
-        const trackInfo = document.createElement('div');
-        trackInfo.className = 'spotify-track-info';
-        
-        const trackTitle = document.createElement('div');
-        trackTitle.className = 'spotify-track-title';
-        trackTitle.textContent = item.track.name;
-        trackInfo.appendChild(trackTitle);
-        
-        const trackArtist = document.createElement('div');
-        trackArtist.className = 'spotify-track-artist';
-        trackArtist.textContent = item.track.artists.map(a => a.name).join(', ');
-        trackInfo.appendChild(trackArtist);
-        
-        trackItem.appendChild(trackInfo);
-
-        if (this.settings.showDuration && item.track.duration_ms) {
-          const duration = document.createElement('div');
-          duration.className = 'spotify-track-duration';
-          duration.textContent = this.formatDuration(item.track.duration_ms);
-          trackItem.appendChild(duration);
-        }
-        
-        tracksList.appendChild(trackItem);
-      }
-    });
-    
-    playlistEl.appendChild(tracksList);
-  }
-  
-  if (layout === 'card') {
-    container.appendChild(playlistEl);
-    el.appendChild(container);
-  } else {
-    container.appendChild(playlistEl);
-    el.appendChild(container);
-  }
+  el.appendChild(albumEl);
 }
 
 renderSearchResults(el, results, config) {
@@ -813,266 +667,258 @@ renderSearchResults(el, results, config) {
   const items = results[searchType + 's']?.items || [];
   
   if (items.length === 0) {
-    el.innerHTML = '<div class="spotify-no-results">No results found</div>';
+    const noResults = document.createElement('div');
+    noResults.className = 'spotify-no-results';
+    noResults.textContent = 'No results found';
+    noResults.style.textAlign = 'center';
+    noResults.style.padding = '20px';
+    noResults.style.color = 'var(--text-muted)';
+    el.appendChild(noResults);
     return;
   }
   
   const layout = config.layout || this.settings.defaultLayout;
   
-  // Create grid container for card layout
-  const container = layout === 'card' ? 
-    document.createElement('div') : 
-    document.createElement('div');
+  // Apply max results limit
+  const itemsToShow = items.slice(0, config.limit || this.settings.maxResults);
   
-  if (layout === 'card') {
-    container.className = 'spotify-results-grid';
-  } else {
-    container.className = 'spotify-search-results-list';
+  // Set up grid layout if needed
+  if (layout === 'grid') {
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = `repeat(${this.settings.gridColumns}, 1fr)`;
+    el.style.gap = '16px';
   }
   
-  items.forEach(item => {
+  itemsToShow.forEach(item => {
     const itemContainer = document.createElement('div');
-    itemContainer.className = layout === 'card' ? 
-      'spotify-search-result-item' : 
-      'spotify-search-result-item';
+    itemContainer.className = `spotify-search-result-item spotify-${layout}`;
+    
+    // Layout-specific styling
+    if (layout === 'list') {
+      itemContainer.style.display = 'flex';
+      itemContainer.style.alignItems = 'center';
+      itemContainer.style.gap = '12px';
+      itemContainer.style.padding = '8px';
+      itemContainer.style.borderBottom = '1px solid var(--background-modifier-border)';
+    } else if (layout === 'card' || layout === 'grid') {
+      itemContainer.style.display = 'flex';
+      itemContainer.style.flexDirection = 'column';
+      itemContainer.style.padding = '12px';
+      itemContainer.style.border = '1px solid var(--background-modifier-border)';
+      itemContainer.style.borderRadius = '8px';
+    }
     
     switch (searchType) {
       case 'track':
-        this.renderTrackSearchResult(itemContainer, item);
+        this.renderTrackSearchResult(itemContainer, item, layout);
         break;
       case 'album':
-        this.renderAlbumSearchResult(itemContainer, item);
+        this.renderAlbumSearchResult(itemContainer, item, layout);
         break;
       case 'artist':
-        this.renderArtistSearchResult(itemContainer, item);
+        this.renderArtistSearchResult(itemContainer, item, layout);
         break;
       case 'playlist':
-        this.renderPlaylistSearchResult(itemContainer, item);
+        this.renderPlaylistSearchResult(itemContainer, item, layout);
         break;
     }
     
-    container.appendChild(itemContainer);
+    el.appendChild(itemContainer);
   });
-  
-  el.appendChild(container);
 }
 
-  renderSearchInterface(el, config) {
-    const container = document.createElement('div');
-    container.className = 'spotify-search-container';
+// Updated search result rendering methods to handle layout
+renderTrackSearchResult(el, track, layout) {
+  if (track.album?.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = track.album.images[0].url;
+    img.className = 'spotify-search-result-image';
     
-    // Search input
-    const searchBox = document.createElement('div');
-    searchBox.className = 'spotify-search-box';
+    if (layout === 'list') {
+      img.style.width = '48px';
+      img.style.height = '48px';
+    } else {
+      img.style.width = '100%';
+      img.style.aspectRatio = '1';
+      img.style.objectFit = 'cover';
+      img.style.marginBottom = '8px';
+    }
     
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = `Search ${config.searchType || 'tracks'}...`;
-    searchInput.className = 'spotify-search-input';
-    
-    const searchButton = document.createElement('button');
-    searchButton.textContent = 'Search';
-    searchButton.className = 'spotify-search-button';
-    
-    searchBox.appendChild(searchInput);
-    searchBox.appendChild(searchButton);
-    container.appendChild(searchBox);
-    
-    // Results container
-    const resultsContainer = document.createElement('div');
-    resultsContainer.className = 'spotify-search-results';
-    container.appendChild(resultsContainer);
-    
-    // Search function
-    const performSearch = async () => {
-      const query = searchInput.value.trim();
-      if (!query) return;
-      
-      try {
-        searchButton.textContent = 'Searching...';
-        searchButton.disabled = true;
-        
-        const searchConfig = {
-          type: 'search',
-          query: query,
-          searchType: config.searchType || 'track',
-          limit: config.limit || 20
-        };
-        
-        const results = await this.fetchSpotifyData(searchConfig);
-        this.renderSearchResults(resultsContainer, results, searchConfig);
-        
-      } catch (error) {
-        this.renderError(resultsContainer, `Search failed: ${error.message}`);
-      } finally {
-        searchButton.textContent = 'Search';
-        searchButton.disabled = false;
-      }
-    };
-    
-    // Event listeners
-    searchButton.addEventListener('click', performSearch);
-    searchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        performSearch();
-      }
-    });
-    
-    el.appendChild(container);
+    el.appendChild(img);
   }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  info.style.flex = '1';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = track.name;
+  title.style.fontWeight = 'bold';
+  title.style.marginBottom = '4px';
+  info.appendChild(title);
+  
+  const artist = document.createElement('div');
+  artist.className = 'spotify-search-result-subtitle';
+  artist.textContent = track.artists.map(a => a.name).join(', ');
+  artist.style.color = 'var(--text-muted)';
+  artist.style.marginBottom = '2px';
+  info.appendChild(artist);
+  
+  const album = document.createElement('div');
+  album.className = 'spotify-search-result-detail';
+  album.textContent = track.album.name;
+  album.style.color = 'var(--text-muted)';
+  album.style.fontSize = '0.9em';
+  info.appendChild(album);
+  
+  el.appendChild(info);
+}
 
-  renderSearchResults(el, results, config) {
-    this.emptyElement(el);
+renderAlbumSearchResult(el, album, layout) {
+  if (album.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = album.images[0].url;
+    img.className = 'spotify-search-result-image';
     
-    const searchType = config.searchType || 'track';
-    const items = results[searchType + 's']?.items || [];
-    
-    if (items.length === 0) {
-      el.innerHTML = '<div class="spotify-no-results">No results found</div>';
-      return;
+    if (layout === 'list') {
+      img.style.width = '48px';
+      img.style.height = '48px';
+    } else {
+      img.style.width = '100%';
+      img.style.aspectRatio = '1';
+      img.style.objectFit = 'cover';
+      img.style.marginBottom = '8px';
     }
     
-    items.forEach(item => {
-      const itemContainer = document.createElement('div');
-      itemContainer.className = 'spotify-search-result-item';
-      
-      switch (searchType) {
-        case 'track':
-          this.renderTrackSearchResult(itemContainer, item);
-          break;
-        case 'album':
-          this.renderAlbumSearchResult(itemContainer, item);
-          break;
-        case 'artist':
-          this.renderArtistSearchResult(itemContainer, item);
-          break;
-        case 'playlist':
-          this.renderPlaylistSearchResult(itemContainer, item);
-          break;
-      }
-      
-      el.appendChild(itemContainer);
-    });
+    el.appendChild(img);
   }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  info.style.flex = '1';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = album.name;
+  title.style.fontWeight = 'bold';
+  title.style.marginBottom = '4px';
+  info.appendChild(title);
+  
+  const artist = document.createElement('div');
+  artist.className = 'spotify-search-result-subtitle';
+  artist.textContent = album.artists.map(a => a.name).join(', ');
+  artist.style.color = 'var(--text-muted)';
+  artist.style.marginBottom = '2px';
+  info.appendChild(artist);
+  
+  const releaseDate = document.createElement('div');
+  releaseDate.className = 'spotify-search-result-detail';
+  releaseDate.textContent = new Date(album.release_date).getFullYear();
+  releaseDate.style.color = 'var(--text-muted)';
+  releaseDate.style.fontSize = '0.9em';
+  info.appendChild(releaseDate);
+  
+  el.appendChild(info);
+}
 
-  renderTrackSearchResult(el, track) {
-    if (track.album?.images?.[0]) {
-      const img = document.createElement('img');
-      img.src = track.album.images[0].url;
-      img.className = 'spotify-search-result-image';
-      el.appendChild(img);
+renderArtistSearchResult(el, artist, layout) {
+  if (artist.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = artist.images[0].url;
+    img.className = 'spotify-search-result-image';
+    
+    if (layout === 'list') {
+      img.style.width = '48px';
+      img.style.height = '48px';
+      img.style.borderRadius = '50%';
+    } else {
+      img.style.width = '100%';
+      img.style.aspectRatio = '1';
+      img.style.objectFit = 'cover';
+      img.style.borderRadius = '50%';
+      img.style.marginBottom = '8px';
     }
     
-    const info = document.createElement('div');
-    info.className = 'spotify-search-result-info';
-    
-    const title = document.createElement('div');
-    title.className = 'spotify-search-result-title';
-    title.textContent = track.name;
-    info.appendChild(title);
-    
-    const artist = document.createElement('div');
-    artist.className = 'spotify-search-result-subtitle';
-    artist.textContent = track.artists.map(a => a.name).join(', ');
-    info.appendChild(artist);
-    
-    const album = document.createElement('div');
-    album.className = 'spotify-search-result-detail';
-    album.textContent = track.album.name;
-    info.appendChild(album);
-    
-    el.appendChild(info);
+    el.appendChild(img);
   }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  info.style.flex = '1';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = artist.name;
+  title.style.fontWeight = 'bold';
+  title.style.marginBottom = '4px';
+  info.appendChild(title);
+  
+  const followers = document.createElement('div');
+  followers.className = 'spotify-search-result-subtitle';
+  followers.textContent = `${artist.followers.total.toLocaleString()} followers`;
+  followers.style.color = 'var(--text-muted)';
+  followers.style.marginBottom = '2px';
+  info.appendChild(followers);
+  
+  if (artist.genres?.length > 0) {
+    const genres = document.createElement('div');
+    genres.className = 'spotify-search-result-detail';
+    genres.textContent = artist.genres.slice(0, 3).join(', ');
+    genres.style.color = 'var(--text-muted)';
+    genres.style.fontSize = '0.9em';
+    info.appendChild(genres);
+  }
+  
+  el.appendChild(info);
+}
 
-  renderAlbumSearchResult(el, album) {
-    if (album.images?.[0]) {
-      const img = document.createElement('img');
-      img.src = album.images[0].url;
-      img.className = 'spotify-search-result-image';
-      el.appendChild(img);
+renderPlaylistSearchResult(el, playlist, layout) {
+  if (playlist.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = playlist.images[0].url;
+    img.className = 'spotify-search-result-image';
+    
+    if (layout === 'list') {
+      img.style.width = '48px';
+      img.style.height = '48px';
+    } else {
+      img.style.width = '100%';
+      img.style.aspectRatio = '1';
+      img.style.objectFit = 'cover';
+      img.style.marginBottom = '8px';
     }
     
-    const info = document.createElement('div');
-    info.className = 'spotify-search-result-info';
-    
-    const title = document.createElement('div');
-    title.className = 'spotify-search-result-title';
-    title.textContent = album.name;
-    info.appendChild(title);
-    
-    const artist = document.createElement('div');
-    artist.className = 'spotify-search-result-subtitle';
-    artist.textContent = album.artists.map(a => a.name).join(', ');
-    info.appendChild(artist);
-    
-    const releaseDate = document.createElement('div');
-    releaseDate.className = 'spotify-search-result-detail';
-    releaseDate.textContent = new Date(album.release_date).getFullYear();
-    info.appendChild(releaseDate);
-    
-    el.appendChild(info);
+    el.appendChild(img);
   }
-// Complete the renderArtistSearchResult method (continuation from where it was cut off)
-  renderArtistSearchResult(el, artist) {
-    if (artist.images?.[0]) {
-      const img = document.createElement('img');
-      img.src = artist.images[0].url;
-      img.className = 'spotify-search-result-image';
-      el.appendChild(img);
-    }
-    
-    const info = document.createElement('div');
-    info.className = 'spotify-search-result-info';
-    
-    const title = document.createElement('div');
-    title.className = 'spotify-search-result-title';
-    title.textContent = artist.name;
-    info.appendChild(title);
-    
-    const followers = document.createElement('div');
-    followers.className = 'spotify-search-result-subtitle';
-    followers.textContent = `${artist.followers.total.toLocaleString()} followers`;
-    info.appendChild(followers);
-    
-    if (artist.genres?.length > 0) {
-      const genres = document.createElement('div');
-      genres.className = 'spotify-search-result-detail';
-      genres.textContent = artist.genres.slice(0, 3).join(', ');
-      info.appendChild(genres);
-    }
-    
-    el.appendChild(info);
-  }
-
-
-  renderPlaylistSearchResult(el, playlist) {
-    if (playlist.images?.[0]) {
-      const img = document.createElement('img');
-      img.src = playlist.images[0].url;
-      img.className = 'spotify-search-result-image';
-      el.appendChild(img);
-    }
-    
-    const info = document.createElement('div');
-    info.className = 'spotify-search-result-info';
-    
-    const title = document.createElement('div');
-    title.className = 'spotify-search-result-title';
-    title.textContent = playlist.name;
-    info.appendChild(title);
-    
-    const owner = document.createElement('div');
-    owner.className = 'spotify-search-result-subtitle';
-    owner.textContent = `by ${playlist.owner.display_name}`;
-    info.appendChild(owner);
-    
-    const trackCount = document.createElement('div');
-    trackCount.className = 'spotify-search-result-detail';
-    trackCount.textContent = `${playlist.tracks.total} tracks`;
-    info.appendChild(trackCount);
-    
-    el.appendChild(info);
-  }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  info.style.flex = '1';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = playlist.name;
+  title.style.fontWeight = 'bold';
+  title.style.marginBottom = '4px';
+  info.appendChild(title);
+  
+  const owner = document.createElement('div');
+  owner.className = 'spotify-search-result-subtitle';
+  owner.textContent = `by ${playlist.owner.display_name}`;
+  owner.style.color = 'var(--text-muted)';
+  owner.style.marginBottom = '2px';
+  info.appendChild(owner);
+  
+  const trackCount = document.createElement('div');
+  trackCount.className = 'spotify-search-result-detail';
+  trackCount.textContent = `${playlist.tracks.total} tracks`;
+  trackCount.style.color = 'var(--text-muted)';
+  trackCount.style.fontSize = '0.9em';
+  info.appendChild(trackCount);
+  
+  el.appendChild(info);
+          }
 
   renderError(el, message) {
   this.emptyElement(el);
