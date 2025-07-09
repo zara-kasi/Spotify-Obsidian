@@ -54,34 +54,53 @@ async loadSettings() {
   }
 
   // ===================== SPOTIFY AUTH =====================
-
-  async authenticateSpotify() {
-    try {
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic ' + btoa(this.settings.clientId + ':' + this.settings.clientSecret)
-        },
-        body: 'grant_type=client_credentials'
-      });
-
-      if (!response.ok) throw new Error(`Authentication failed: ${response.status}`);
-
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      this.tokenExpiry = Date.now() + (data.expires_in * 1000);
-      this.settings.accessToken = data.access_token;
-      this.settings.tokenExpiresAt = this.tokenExpiry;
-      await this.saveSettings();
-      console.log('Spotify authentication successful');
-      return true;
-    } catch (error) {
-      console.error('Spotify authentication error:', error);
-      new Notice('Spotify authentication failed. Please check your credentials.');
-      return false;
-    }
+async authenticateSpotify() {
+  if (!this.settings.clientId || !this.settings.clientSecret) {
+    throw new Error('Client ID and Client Secret are required');
   }
+  
+  if (!this.settings.clientId.match(/^[a-zA-Z0-9]+$/)) {
+    throw new Error('Invalid Client ID format');
+  }
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + btoa(this.settings.clientId + ':' + this.settings.clientSecret)
+      },
+      body: 'grant_type=client_credentials',
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Authentication failed: ${response.status} - ${errorData.error_description || response.statusText}`);
+    }
+
+    const data = await response.json();
+    this.accessToken = data.access_token;
+    this.tokenExpiry = Date.now() + (data.expires_in * 1000);
+    
+    console.log('Spotify authentication successful');
+    return true;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Authentication request timed out');
+    }
+    console.error('Spotify authentication error:', error);
+    this.accessToken = null;
+    this.tokenExpiry = null;
+    throw error;
+  }
+}
+  
 
   async getValidAccessToken() {
     if (!this.accessToken || Date.now() >= this.tokenExpiry) {
