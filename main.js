@@ -347,7 +347,9 @@ async authenticateSpotify() {
 
   // ===================== RENDERING =====================
 
-  renderSpotifyData(el, data, config) {
+ // ===================== RENDERING =====================
+
+renderSpotifyData(el, data, config) {
   this.emptyElement(el);
   el.className = `spotify-container spotify-layout-${config.layout || this.settings.defaultLayout}`;
   
@@ -373,13 +375,24 @@ async authenticateSpotify() {
   }
 }
 
- renderTrack(el, track, config) {
+renderTrack(el, track, config) {
   const layout = config.layout || this.settings.defaultLayout;
-  const container = document.createElement('div');
-  container.className = `spotify-track spotify-${layout}`;
+  
+  // Create grid container for card layout
+  const container = layout === 'card' ? 
+    document.createElement('div') : 
+    document.createElement('div');
+  
+  if (layout === 'card') {
+    container.className = 'spotify-results-grid';
+  } else {
+    container.className = `spotify-track spotify-${layout}`;
+  }
   
   const trackEl = document.createElement('div');
-  trackEl.className = 'spotify-track-item';
+  trackEl.className = layout === 'card' ? 
+    `spotify-track spotify-${layout}` : 
+    'spotify-track-item';
   
   // For grid and card layouts, show album art prominently
   if (this.settings.showAlbumArt && track.album?.images?.[0] && (layout === 'card' || layout === 'grid')) {
@@ -430,13 +443,34 @@ async authenticateSpotify() {
   }
   
   trackEl.appendChild(info);
-  container.appendChild(trackEl);
-  el.appendChild(container);
+  
+  if (layout === 'card') {
+    container.appendChild(trackEl);
+    el.appendChild(container);
+  } else {
+    container.appendChild(trackEl);
+    el.appendChild(container);
+  }
 }
+
 renderAlbum(el, album, config) {
   const layout = config.layout || this.settings.defaultLayout;
-  const container = document.createElement('div');
-  container.className = `spotify-album spotify-${layout}`;
+  
+  // Create grid container for card layout
+  const container = layout === 'card' ? 
+    document.createElement('div') : 
+    document.createElement('div');
+  
+  if (layout === 'card') {
+    container.className = 'spotify-results-grid';
+  } else {
+    container.className = `spotify-album spotify-${layout}`;
+  }
+  
+  const albumEl = document.createElement('div');
+  albumEl.className = layout === 'card' ? 
+    `spotify-album spotify-${layout}` : 
+    'spotify-album-content';
   
   const header = document.createElement('div');
   header.className = 'spotify-album-header';
@@ -474,10 +508,10 @@ renderAlbum(el, album, config) {
   info.appendChild(trackCount);
   
   header.appendChild(info);
-  container.appendChild(header);
-    
-    // Render tracks if available
-   if (album.tracks?.items?.length > 0) {
+  albumEl.appendChild(header);
+  
+  // Render tracks if available (only for non-card layouts to avoid cluttering)
+  if (album.tracks?.items?.length > 0 && layout !== 'card') {
     const tracksList = document.createElement('div');
     tracksList.className = `spotify-album-tracks spotify-tracks-${layout}`;
     
@@ -515,15 +549,36 @@ renderAlbum(el, album, config) {
       tracksList.appendChild(trackItem);
     });
     
-    container.appendChild(tracksList);
+    albumEl.appendChild(tracksList);
   }
   
-  el.appendChild(container);
+  if (layout === 'card') {
+    container.appendChild(albumEl);
+    el.appendChild(container);
+  } else {
+    container.appendChild(albumEl);
+    el.appendChild(container);
+  }
 }
-  renderArtist(el, artist, config) {
+
+renderArtist(el, artist, config) {
   const layout = config.layout || this.settings.defaultLayout;
-  const container = document.createElement('div');
-  container.className = `spotify-artist spotify-${layout}`;
+  
+  // Create grid container for card layout
+  const container = layout === 'card' ? 
+    document.createElement('div') : 
+    document.createElement('div');
+  
+  if (layout === 'card') {
+    container.className = 'spotify-results-grid';
+  } else {
+    container.className = `spotify-artist spotify-${layout}`;
+  }
+  
+  const artistEl = document.createElement('div');
+  artistEl.className = layout === 'card' ? 
+    `spotify-artist spotify-${layout}` : 
+    'spotify-artist-content';
   
   const header = document.createElement('div');
   header.className = 'spotify-artist-header';
@@ -563,10 +618,10 @@ renderAlbum(el, album, config) {
   }
   
   header.appendChild(info);
-  container.appendChild(header);
+  artistEl.appendChild(header);
 
-    // Render top tracks if available
-      if (artist.topTracks?.length > 0) {
+  // Render top tracks if available (only for non-card layouts to avoid cluttering)
+  if (artist.topTracks?.length > 0 && layout !== 'card') {
     const topTracksSection = document.createElement('div');
     topTracksSection.className = 'spotify-artist-top-tracks';
     
@@ -620,16 +675,36 @@ renderAlbum(el, album, config) {
     });
     
     topTracksSection.appendChild(tracksList);
-    container.appendChild(topTracksSection);
+    artistEl.appendChild(topTracksSection);
   }
   
-  el.appendChild(container);
+  if (layout === 'card') {
+    container.appendChild(artistEl);
+    el.appendChild(container);
+  } else {
+    container.appendChild(artistEl);
+    el.appendChild(container);
   }
-   
+}
+
 renderPlaylist(el, playlist, config) {
   const layout = config.layout || this.settings.defaultLayout;
-  const container = document.createElement('div');
-  container.className = `spotify-playlist spotify-${layout}`;
+  
+  // Create grid container for card layout
+  const container = layout === 'card' ? 
+    document.createElement('div') : 
+    document.createElement('div');
+  
+  if (layout === 'card') {
+    container.className = 'spotify-results-grid';
+  } else {
+    container.className = `spotify-playlist spotify-${layout}`;
+  }
+  
+  const playlistEl = document.createElement('div');
+  playlistEl.className = layout === 'card' ? 
+    `spotify-playlist spotify-${layout}` : 
+    'spotify-playlist-content';
   
   // Playlist header
   const header = document.createElement('div');
@@ -660,7 +735,7 @@ renderPlaylist(el, playlist, config) {
   trackCount.textContent = `${playlist.tracks.total} tracks`;
   info.appendChild(trackCount);
   
-  if (playlist.description) {
+  if (playlist.description && layout !== 'card') {
     const description = document.createElement('div');
     description.className = 'spotify-playlist-description';
     description.textContent = playlist.description;
@@ -668,10 +743,10 @@ renderPlaylist(el, playlist, config) {
   }
   
   header.appendChild(info);
-  container.appendChild(header);
-    
-    // Playlist tracks
-     if (playlist.tracks?.items?.length > 0) {
+  playlistEl.appendChild(header);
+  
+  // Playlist tracks (only for non-card layouts to avoid cluttering)
+  if (playlist.tracks?.items?.length > 0 && layout !== 'card') {
     const tracksList = document.createElement('div');
     tracksList.className = `spotify-playlist-tracks spotify-tracks-${layout}`;
     
@@ -719,8 +794,65 @@ renderPlaylist(el, playlist, config) {
       }
     });
     
-    container.appendChild(tracksList);
+    playlistEl.appendChild(tracksList);
   }
+  
+  if (layout === 'card') {
+    container.appendChild(playlistEl);
+    el.appendChild(container);
+  } else {
+    container.appendChild(playlistEl);
+    el.appendChild(container);
+  }
+}
+
+renderSearchResults(el, results, config) {
+  this.emptyElement(el);
+  
+  const searchType = config.searchType || 'track';
+  const items = results[searchType + 's']?.items || [];
+  
+  if (items.length === 0) {
+    el.innerHTML = '<div class="spotify-no-results">No results found</div>';
+    return;
+  }
+  
+  const layout = config.layout || this.settings.defaultLayout;
+  
+  // Create grid container for card layout
+  const container = layout === 'card' ? 
+    document.createElement('div') : 
+    document.createElement('div');
+  
+  if (layout === 'card') {
+    container.className = 'spotify-results-grid';
+  } else {
+    container.className = 'spotify-search-results-list';
+  }
+  
+  items.forEach(item => {
+    const itemContainer = document.createElement('div');
+    itemContainer.className = layout === 'card' ? 
+      'spotify-search-result-item' : 
+      'spotify-search-result-item';
+    
+    switch (searchType) {
+      case 'track':
+        this.renderTrackSearchResult(itemContainer, item);
+        break;
+      case 'album':
+        this.renderAlbumSearchResult(itemContainer, item);
+        break;
+      case 'artist':
+        this.renderArtistSearchResult(itemContainer, item);
+        break;
+      case 'playlist':
+        this.renderPlaylistSearchResult(itemContainer, item);
+        break;
+    }
+    
+    container.appendChild(itemContainer);
+  });
   
   el.appendChild(container);
 }
