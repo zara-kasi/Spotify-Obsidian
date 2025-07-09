@@ -246,10 +246,7 @@ class SpotifyPlugin extends Plugin {
     return artist;
   }
 
-  async fetchPlaylist(id) {
-    const playlist = await this.makeSpotifyRequest(`/playlists/${id}`);
-    return playlist;
-  }
+
 
   async searchSpotify(query, type = 'track', limit = 20) {
     const encodedQuery = encodeURIComponent(query);
@@ -297,12 +294,213 @@ class SpotifyPlugin extends Plugin {
       default:
         this.renderError(el, `Unsupported type: ${config.type}`);
     }
+    // Add this method anywhere in your class (I suggest near other utility methods)
+formatDuration(ms) {
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+      renderSearchResults(el, results, config) {
+  el.empty();
+  
+  const searchType = config.searchType || 'track';
+  const items = results[searchType + 's']?.items || [];
+  
+  if (items.length === 0) {
+    el.innerHTML = '<div class="spotify-no-results">No results found</div>';
+    return;
+  }
+  
+  items.forEach(item => {
+    const itemContainer = document.createElement('div');
+    itemContainer.className = 'spotify-search-result-item';
+    
+    switch (searchType) {
+      case 'track':
+        this.renderTrackSearchResult(itemContainer, item);
+        break;
+      case 'album':
+        this.renderAlbumSearchResult(itemContainer, item);
+        break;
+      case 'artist':
+        this.renderArtistSearchResult(itemContainer, item);
+        break;
+      case 'playlist':
+        this.renderPlaylistSearchResult(itemContainer, item);
+        break;
+    }
+    
+    el.appendChild(itemContainer);
+  });
+}
+
+// Add these helper methods for search results:
+renderTrackSearchResult(el, track) {
+  if (track.album?.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = track.album.images[0].url;
+    img.className = 'spotify-search-result-image';
+    el.appendChild(img);
+  }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = track.name;
+  info.appendChild(title);
+  
+  const artist = document.createElement('div');
+  artist.className = 'spotify-search-result-subtitle';
+  artist.textContent = track.artists.map(a => a.name).join(', ');
+  info.appendChild(artist);
+  
+  const album = document.createElement('div');
+  album.className = 'spotify-search-result-detail';
+  album.textContent = track.album.name;
+  info.appendChild(album);
+  
+  el.appendChild(info);
+}
+  renderPlaylistSearchResult(el, playlist) {
+  if (playlist.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = playlist.images[0].url;
+    img.className = 'spotify-search-result-image';
+    el.appendChild(img);
+  }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = playlist.name;
+  info.appendChild(title);
+  
+  const owner = document.createElement('div');
+  owner.className = 'spotify-search-result-subtitle';
+  owner.textContent = `by ${playlist.owner.display_name}`;
+  info.appendChild(owner);
+  
+  const trackCount = document.createElement('div');
+  trackCount.className = 'spotify-search-result-detail';
+  trackCount.textContent = `${playlist.tracks.total} tracks`;
+  info.appendChild(trackCount);
+  
+  el.appendChild(info);
+}
+
+renderAlbumSearchResult(el, album) {
+  if (album.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = album.images[0].url;
+    img.className = 'spotify-search-result-image';
+    el.appendChild(img);
+  }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = album.name;
+  info.appendChild(title);
+  
+  const artist = document.createElement('div');
+  artist.className = 'spotify-search-result-subtitle';
+  artist.textContent = album.artists.map(a => a.name).join(', ');
+  info.appendChild(artist);
+  
+  const releaseDate = document.createElement('div');
+  releaseDate.className = 'spotify-search-result-detail';
+  releaseDate.textContent = new Date(album.release_date).getFullYear();
+  info.appendChild(releaseDate);
+  
+  el.appendChild(info);
+}
+  renderArtistSearchResult(el, artist) {
+  if (artist.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = artist.images[0].url;
+    img.className = 'spotify-search-result-image';
+    el.appendChild(img);
+  }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-search-result-info';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-search-result-title';
+  title.textContent = artist.name;
+  info.appendChild(title);
+  
+  const followers = document.createElement('div');
+  followers.className = 'spotify-search-result-subtitle';
+  followers.textContent = `${artist.followers.total.toLocaleString()} followers`;
+  info.appendChild(followers);
+  
+  if (artist.genres?.length > 0) {
+    const genres = document.createElement('div');
+    genres.className = 'spotify-search-result-detail';
+    genres.textContent = artist.genres.slice(0, 3).join(', ');
+    info.appendChild(genres);
+  }
+  
+  el.appendChild(info);
+  }
   }
 
-  renderTrack(el, track, config) {
-    // Implement your track rendering logic here (as in your original code)
-    el.innerHTML = `<div><b>${track.name}</b> by ${track.artists.map(a => a.name).join(', ')}</div>`;
+renderTrack(el, track, config) {
+  const container = document.createElement('div');
+  container.className = `spotify-track spotify-${config.layout || 'card'}`;
+  
+  const trackEl = document.createElement('div');
+  trackEl.className = 'spotify-track-item';
+  
+  if (this.settings.showAlbumArt && track.album?.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = track.album.images[0].url;
+    img.className = 'spotify-album-art';
+    trackEl.appendChild(img);
   }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-track-info';
+  
+  const title = document.createElement('div');
+  title.className = 'spotify-track-title';
+  title.textContent = track.name;
+  info.appendChild(title);
+  
+  if (this.settings.showArtist) {
+    const artist = document.createElement('div');
+    artist.className = 'spotify-track-artist';
+    artist.textContent = track.artists.map(a => a.name).join(', ');
+    info.appendChild(artist);
+  }
+  
+  if (this.settings.showAlbum && track.album) {
+    const album = document.createElement('div');
+    album.className = 'spotify-track-album';
+    album.textContent = track.album.name;
+    info.appendChild(album);
+  }
+  
+  if (this.settings.showDuration && track.duration_ms) {
+    const duration = document.createElement('div');
+    duration.className = 'spotify-track-duration';
+    duration.textContent = this.formatDuration(track.duration_ms);
+    info.appendChild(duration);
+  }
+  
+  trackEl.appendChild(info);
+  container.appendChild(trackEl);
+  el.appendChild(container);
+}
+
 
   renderAlbum(el, album, config) {
     // Implement your album rendering logic here
@@ -314,15 +512,153 @@ class SpotifyPlugin extends Plugin {
     el.innerHTML = `<div><b>${artist.name}</b></div>`;
   }
 
-  renderPlaylist(el, playlist, config) {
-    // Implement your playlist rendering logic here
-    el.innerHTML = `<div><b>${playlist.name}</b> by ${playlist.owner.display_name}</div>`;
+ renderPlaylist(el, playlist, config) {
+  const container = document.createElement('div');
+  container.className = `spotify-playlist spotify-${config.layout || 'list'}`;
+  
+  // Playlist header
+  const header = document.createElement('div');
+  header.className = 'spotify-playlist-header';
+  
+  if (this.settings.showAlbumArt && playlist.images?.[0]) {
+    const img = document.createElement('img');
+    img.src = playlist.images[0].url;
+    img.className = 'spotify-playlist-art';
+    header.appendChild(img);
   }
+  
+  const info = document.createElement('div');
+  info.className = 'spotify-playlist-info';
+  
+  const title = document.createElement('h3');
+  title.className = 'spotify-playlist-title';
+  title.textContent = playlist.name;
+  info.appendChild(title);
+  
+  const owner = document.createElement('div');
+  owner.className = 'spotify-playlist-owner';
+  owner.textContent = `by ${playlist.owner.display_name}`;
+  info.appendChild(owner);
+  
+  const trackCount = document.createElement('div');
+  trackCount.className = 'spotify-playlist-count';
+  trackCount.textContent = `${playlist.tracks.total} tracks`;
+  info.appendChild(trackCount);
+  
+  header.appendChild(info);
+  container.appendChild(header);
+  
+  // Playlist tracks
+  if (playlist.tracks?.items?.length > 0) {
+    const tracksList = document.createElement('div');
+    tracksList.className = 'spotify-playlist-tracks';
+    
+    playlist.tracks.items.forEach((item, index) => {
+      if (item.track) {
+        const trackItem = document.createElement('div');
+        trackItem.className = 'spotify-playlist-track-item';
+        
+        const trackNumber = document.createElement('div');
+        trackNumber.className = 'spotify-track-number';
+        trackNumber.textContent = (index + 1).toString();
+        trackItem.appendChild(trackNumber);
+        
+        const trackInfo = document.createElement('div');
+        trackInfo.className = 'spotify-track-info';
+        
+        const trackTitle = document.createElement('div');
+        trackTitle.className = 'spotify-track-title';
+        trackTitle.textContent = item.track.name;
+        trackInfo.appendChild(trackTitle);
+        
+        const trackArtist = document.createElement('div');
+        trackArtist.className = 'spotify-track-artist';
+        trackArtist.textContent = item.track.artists.map(a => a.name).join(', ');
+        trackInfo.appendChild(trackArtist);
+        
+        trackItem.appendChild(trackInfo);
+
+        if (this.settings.showDuration && item.track.duration_ms) {
+          const duration = document.createElement('div');
+          duration.className = 'spotify-track-duration';
+          duration.textContent = this.formatDuration(item.track.duration_ms);
+          trackItem.appendChild(duration);
+        }
+        
+        tracksList.appendChild(trackItem);
+      }
+    });
+    
+    container.appendChild(tracksList);
+  }
+  
+  el.appendChild(container);
+ }
 
   renderSearchInterface(el, config) {
-    // Implement your search interface rendering logic here (see your original for inspiration)
-    el.innerHTML = `<div>Spotify Search UI goes here.</div>`;
-  }
+  const container = document.createElement('div');
+  container.className = 'spotify-search-container';
+  
+  // Search input
+  const searchBox = document.createElement('div');
+  searchBox.className = 'spotify-search-box';
+  
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = `Search ${config.searchType || 'tracks'}...`;
+  searchInput.className = 'spotify-search-input';
+  
+  const searchButton = document.createElement('button');
+  searchButton.textContent = 'Search';
+  searchButton.className = 'spotify-search-button';
+  
+  searchBox.appendChild(searchInput);
+  searchBox.appendChild(searchButton);
+  container.appendChild(searchBox);
+  
+  // Results container
+  const resultsContainer = document.createElement('div');
+  resultsContainer.className = 'spotify-search-results';
+  container.appendChild(resultsContainer);
+  
+  // Search function
+  const performSearch = async () => {
+    const query = searchInput.value.trim();
+    if (!query) return;
+    
+    try {
+      searchButton.textContent = 'Searching...';
+      searchButton.disabled = true;
+      
+      const searchConfig = {
+        type: 'search',
+        query: query,
+        searchType: config.searchType || 'track',
+        limit: config.limit || 20
+      };
+      
+      const results = await this.fetchSpotifyData(searchConfig);
+      this.renderSearchResults(resultsContainer, results, searchConfig);
+      
+    } catch (error) {
+      this.renderError(resultsContainer, `Search failed: ${error.message}`);
+    } finally {
+      searchButton.textContent = 'Search';
+      searchButton.disabled = false;
+    }
+  };
+  
+  // Event listeners
+  searchButton.addEventListener('click', performSearch);
+  searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  });
+  
+  el.appendChild(container);
+}
+
 
   renderError(el, message) {
     el.innerHTML = `<div class="spotify-error">Error: ${message}</div>`;
@@ -389,3 +725,9 @@ class SpotifySettingTab extends PluginSettingTab {
 }
 
 module.exports = SpotifyPlugin;
+// Add this helper for DOM manipulation
+HTMLElement.prototype.empty = function() {
+  while (this.firstChild) {
+    this.removeChild(this.firstChild);
+  }
+};
