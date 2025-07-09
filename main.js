@@ -28,27 +28,26 @@ class SpotifyPlugin extends Plugin {
   }
 
   // ===================== SETTINGS =====================
-
-  async loadSettings() {
-    const defaults = {
-      clientId: '',
-      clientSecret: '',
-      defaultUserId: '',
-      defaultLayout: 'card',
-      showAlbumArt: true,
-      showArtist: true,
-      showAlbum: true,
-      showDuration: true,
-      showGenres: false,
-      showPopularity: true,
-      gridColumns: 3,
-      maxResults: 20,
-      accessToken: null,
-      refreshToken: null,
-      tokenExpiresAt: null
-    };
-    this.settings = Object.assign({}, defaults, await this.loadData());
-  }
+async loadSettings() {
+  const defaults = {
+    clientId: '',
+    clientSecret: '',
+    defaultUserId: '',
+    defaultLayout: 'card',
+    showAlbumArt: true,
+    showArtist: true,
+    showAlbum: true,
+    showDuration: true,
+    showGenres: false,
+    showPopularity: true,
+    gridColumns: 3,
+    maxResults: 20,
+    accessToken: null,
+    refreshToken: null,
+    tokenExpiresAt: null // Remove trailing comma here
+  };
+  this.settings = Object.assign({}, defaults, await this.loadData());
+}
 
   async saveSettings() {
     await this.saveData(this.settings);
@@ -840,7 +839,7 @@ class SpotifyPlugin extends Plugin {
     el.appendChild(info);
   }
 
-  // Missing renderPlaylistSearchResult method
+
   renderPlaylistSearchResult(el, playlist) {
     if (playlist.images?.[0]) {
       const img = document.createElement('img');
@@ -870,22 +869,21 @@ class SpotifyPlugin extends Plugin {
     el.appendChild(info);
   }
 
-  // Missing renderError method
   renderError(el, message) {
-    this.emptyElement(el);
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'spotify-error';
-    errorDiv.style.cssText = `
-      color: #ff4444;
-      padding: 10px;
-      border: 1px solid #ff4444;
-      border-radius: 4px;
-      background-color: rgba(255, 68, 68, 0.1);
-      margin: 10px 0;
-    `;
-    errorDiv.textContent = `Spotify Error: ${message}`;
-    el.appendChild(errorDiv);
-  }
+  this.emptyElement(el);
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'spotify-error';
+  errorDiv.style.cssText = `
+    color: #ff4444;
+    padding: 10px;
+    border: 1px solid #ff4444;
+    border-radius: 4px;
+    background-color: rgba(255, 68, 68, 0.1);
+    margin: 10px 0;
+  `;
+  errorDiv.textContent = `Spotify Error: ${message}`;
+  el.appendChild(errorDiv);
+}
 
   // Enhanced onunload method with proper cleanup
   onunload() {
