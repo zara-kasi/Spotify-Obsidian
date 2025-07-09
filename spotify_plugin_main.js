@@ -808,7 +808,7 @@ class SpotifyPlugin extends Plugin {
     
     el.appendChild(info);
   }
-
+// Complete the renderArtistSearchResult method (continuation from where it was cut off)
   renderArtistSearchResult(el, artist) {
     if (artist.images?.[0]) {
       const img = document.createElement('img');
@@ -832,4 +832,256 @@ class SpotifyPlugin extends Plugin {
     
     if (artist.genres?.length > 0) {
       const genres = document.createElement('div');
-      genres
+      genres.className = 'spotify-search-result-detail';
+      genres.textContent = artist.genres.slice(0, 3).join(', ');
+      info.appendChild(genres);
+    }
+    
+    el.appendChild(info);
+  }
+
+  // Missing renderPlaylistSearchResult method
+  renderPlaylistSearchResult(el, playlist) {
+    if (playlist.images?.[0]) {
+      const img = document.createElement('img');
+      img.src = playlist.images[0].url;
+      img.className = 'spotify-search-result-image';
+      el.appendChild(img);
+    }
+    
+    const info = document.createElement('div');
+    info.className = 'spotify-search-result-info';
+    
+    const title = document.createElement('div');
+    title.className = 'spotify-search-result-title';
+    title.textContent = playlist.name;
+    info.appendChild(title);
+    
+    const owner = document.createElement('div');
+    owner.className = 'spotify-search-result-subtitle';
+    owner.textContent = `by ${playlist.owner.display_name}`;
+    info.appendChild(owner);
+    
+    const trackCount = document.createElement('div');
+    trackCount.className = 'spotify-search-result-detail';
+    trackCount.textContent = `${playlist.tracks.total} tracks`;
+    info.appendChild(trackCount);
+    
+    el.appendChild(info);
+  }
+
+  // Missing renderError method
+  renderError(el, message) {
+    this.emptyElement(el);
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'spotify-error';
+    errorDiv.style.cssText = `
+      color: #ff4444;
+      padding: 10px;
+      border: 1px solid #ff4444;
+      border-radius: 4px;
+      background-color: rgba(255, 68, 68, 0.1);
+      margin: 10px 0;
+    `;
+    errorDiv.textContent = `Spotify Error: ${message}`;
+    el.appendChild(errorDiv);
+  }
+
+  // Enhanced onunload method with proper cleanup
+  onunload() {
+    console.log('Unloading Spotify Plugin');
+    // Clear cache
+    if (this.cache) {
+      this.cache.clear();
+    }
+    // Clear any stored tokens for security
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+}
+
+// Missing SpotifySettingTab class
+class SpotifySettingTab extends PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display() {
+    const { containerEl } = this;
+    containerEl.empty();
+
+    containerEl.createEl('h2', { text: 'Spotify Plugin Settings' });
+
+    // Spotify API Credentials
+    containerEl.createEl('h3', { text: 'Spotify API Credentials' });
+    containerEl.createEl('p', { 
+      text: 'Get your credentials from the Spotify Developer Dashboard',
+      cls: 'setting-item-description' 
+    });
+
+    new Setting(containerEl)
+      .setName('Client ID')
+      .setDesc('Your Spotify application Client ID')
+      .addText(text => text
+        .setPlaceholder('Enter your Client ID')
+        .setValue(this.plugin.settings.clientId)
+        .onChange(async (value) => {
+          this.plugin.settings.clientId = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Client Secret')
+      .setDesc('Your Spotify application Client Secret')
+      .addText(text => text
+        .setPlaceholder('Enter your Client Secret')
+        .setValue(this.plugin.settings.clientSecret)
+        .onChange(async (value) => {
+          this.plugin.settings.clientSecret = value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Display Settings
+    containerEl.createEl('h3', { text: 'Display Settings' });
+
+    new Setting(containerEl)
+      .setName('Default Layout')
+      .setDesc('Choose the default layout for displaying Spotify content')
+      .addDropdown(dropdown => dropdown
+        .addOption('card', 'Card')
+        .addOption('list', 'List')
+        .addOption('grid', 'Grid')
+        .setValue(this.plugin.settings.defaultLayout)
+        .onChange(async (value) => {
+          this.plugin.settings.defaultLayout = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Show Album Art')
+      .setDesc('Display album artwork in track and album displays')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showAlbumArt)
+        .onChange(async (value) => {
+          this.plugin.settings.showAlbumArt = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Show Artist')
+      .setDesc('Display artist information')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showArtist)
+        .onChange(async (value) => {
+          this.plugin.settings.showArtist = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Show Album')
+      .setDesc('Display album information in track displays')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showAlbum)
+        .onChange(async (value) => {
+          this.plugin.settings.showAlbum = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Show Duration')
+      .setDesc('Display track duration')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showDuration)
+        .onChange(async (value) => {
+          this.plugin.settings.showDuration = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Show Genres')
+      .setDesc('Display genre information for artists')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showGenres)
+        .onChange(async (value) => {
+          this.plugin.settings.showGenres = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Show Popularity')
+      .setDesc('Display popularity scores')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showPopularity)
+        .onChange(async (value) => {
+          this.plugin.settings.showPopularity = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Grid Columns')
+      .setDesc('Number of columns for grid layout')
+      .addSlider(slider => slider
+        .setLimits(1, 5, 1)
+        .setValue(this.plugin.settings.gridColumns)
+        .setDynamicTooltip()
+        .onChange(async (value) => {
+          this.plugin.settings.gridColumns = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Max Results')
+      .setDesc('Maximum number of results to display')
+      .addSlider(slider => slider
+        .setLimits(5, 50, 5)
+        .setValue(this.plugin.settings.maxResults)
+        .setDynamicTooltip()
+        .onChange(async (value) => {
+          this.plugin.settings.maxResults = value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Authentication Status
+    containerEl.createEl('h3', { text: 'Authentication Status' });
+    
+    const authStatus = containerEl.createEl('div');
+    if (this.plugin.accessToken) {
+      authStatus.innerHTML = '<span style="color: #4CAF50;">✓ Connected to Spotify</span>';
+    } else {
+      authStatus.innerHTML = '<span style="color: #f44336;">✗ Not connected to Spotify</span>';
+    }
+
+    // Test Connection Button
+    new Setting(containerEl)
+      .setName('Test Connection')
+      .setDesc('Test your Spotify API connection')
+      .addButton(button => button
+        .setButtonText('Test Connection')
+        .onClick(async () => {
+          button.setButtonText('Testing...');
+          try {
+            await this.plugin.authenticateSpotify();
+            new Notice('✓ Spotify connection successful!');
+            this.display(); // Refresh the settings display
+          } catch (error) {
+            new Notice('✗ Spotify connection failed. Check your credentials.');
+          }
+          button.setButtonText('Test Connection');
+        }));
+
+    // Clear Cache Button
+    new Setting(containerEl)
+      .setName('Clear Cache')
+      .setDesc('Clear cached Spotify data')
+      .addButton(button => button
+        .setButtonText('Clear Cache')
+        .onClick(() => {
+          this.plugin.cache.clear();
+          new Notice('Cache cleared successfully!');
+        }));
+  }
+}
+
+// Export the plugin
+module.exports = SpotifyPlugin;
