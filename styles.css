@@ -1,0 +1,254 @@
+/* Spotify Plugin CSS Styles */
+/* Add this to your styles.css file or create a new CSS file */
+
+/* Base Spotify Container */
+.spotify-container {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* Error Styles */
+.spotify-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--text-error);
+  background: var(--background-modifier-error);
+  border-radius: 4px;
+  margin: 1rem 0;
+}
+
+.spotify-error-icon {
+  font-size: 1.2rem;
+}
+
+.spotify-error-message {
+  font-weight: 500;
+}
+
+/* Track Styles */
+.spotify-track {
+  padding: 1rem;
+}
+
+.spotify-track.spotify-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.spotify-track-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-track-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spotify-track-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.spotify-track-title a {
+  color: var(--text-normal);
+  text-decoration: none;
+}
+
+.spotify-track-title a:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.spotify-explicit-badge {
+  display: inline-block;
+  background: var(--text-muted);
+  color: var(--background-primary);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+  margin-left: 0.5rem;
+  font-weight: bold;
+}
+
+.spotify-track-artist {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.spotify-track-album {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.spotify-track-duration {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.spotify-track-popularity {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.spotify-track-preview {
+  margin-top: 0.5rem;
+}
+
+.spotify-track-preview audio {
+  width: 100%;
+  height: 32px;
+}
+
+/* Inline Track Styles */
+.spotify-track-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  margin: 0.25rem 0;
+}
+
+.spotify-track-inline-image {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.spotify-track-inline-info {
+  flex: 1;
+}
+
+.spotify-track-inline-title {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.spotify-track-inline-artist {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.spotify-track-inline-link {
+  flex-shrink: 0;
+}
+
+.spotify-track-inline-link a {
+  color: var(--text-accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.spotify-track-inline-link a:hover {
+  text-decoration: underline;
+}
+
+/* Album Styles */
+.spotify-album {
+  padding: 1rem;
+}
+
+.spotify-album-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.spotify-album-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-album-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spotify-album-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-normal);
+  text-decoration: none;
+}
+
+.spotify-album-title:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.spotify-album-artist {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.spotify-album-meta {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.spotify-album-meta span:not(:last-child)::after {
+  content: ' • ';
+  margin: 0 0.5rem;
+}
+
+.spotify-album-tracks h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-normal);
+}
+
+/* Artist Styles */
+.spotify-artist {
+  padding: 1rem;
+}
+
+.spotify-artist-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.spotify-artist-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-artist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spotify-artist-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-normal);
+  text-decoration: none;
+}
+
+.spotify-artist-title:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
