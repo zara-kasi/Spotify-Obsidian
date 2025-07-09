@@ -278,25 +278,47 @@ async authenticateSpotify() {
     return await this.makeSpotifyRequest(`/search?q=${encodedQuery}&type=${type}&limit=${limit}`);
   }
 
-  async makeSpotifyRequest(endpoint, method = 'GET', body = null) {
+ async makeSpotifyRequest(endpoint, method = 'GET', body = null) {
+  try {
     const accessToken = await this.getValidAccessToken();
-    const url = `https://api.spotify.com/v1${endpoint}`;
-    const headers = {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+    if (!accessToken) {
+      throw new Error('No valid access token available');
+    }
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const options = { 
+      method, 
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      signal: controller.signal 
     };
-    const options = { method, headers };
+    
     if (body && (method === 'POST' || method === 'PUT')) {
       options.body = JSON.stringify(body);
     }
-    const response = await fetch(url, options);
+    
+    const response = await fetch(`https://api.spotify.com/v1${endpoint}`, options);
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(`Spotify API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
     }
+    
     if (response.status === 204) return null;
     return await response.json();
+    
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    throw error;
   }
+}
 
   // ===================== UTILITY METHODS =====================
 
