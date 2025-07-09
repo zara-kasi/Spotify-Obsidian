@@ -1,10 +1,33 @@
-/* Spotify Plugin Styles - Step 1: Base Container & Error Styles */
+/* Spotify Plugin Styles - Modified for 3-column grid layout */
 
 /* ─── Container Styles ─── */
 .spotify-container {
   margin: 1rem 0;
   padding: 0 0.1rem;
   font-family: var(--font-interface);
+}
+
+/* ─── Grid Layout for Cards ─── */
+.spotify-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+/* Mobile responsive grid */
+@media (max-width: 768px) {
+  .spotify-results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .spotify-results-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
 }
 
 /* ─── Error Styles ─── */
@@ -29,8 +52,9 @@
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s ease;
-  margin: 0 0 1rem 0;
+  margin: 0; /* Remove margin since grid handles spacing */
   padding: 0;
+  height: fit-content;
 }
 
 /* Hover shadow */
@@ -41,7 +65,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Album art/cover image styling */
+/* Album art/cover image styling - Keep 2:3 aspect ratio */
 .spotify-album-art,
 .spotify-artist-image,
 .spotify-playlist-art {
@@ -51,18 +75,19 @@
   flex-shrink: 0;
 }
 
-/* Info blocks */
+/* Info blocks with better padding */
 .spotify-track-info,
 .spotify-album-info,
 .spotify-artist-info,
 .spotify-playlist-info {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
+  flex-grow: 1;
 }
 
-/* Title styling */
+/* Title styling with proper truncation */
 .spotify-track-title,
 .spotify-album-title,
 .spotify-artist-title,
@@ -71,12 +96,18 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-normal);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.3;
   cursor: pointer;
   transition: color 0.2s ease;
+  
+  /* Multi-line truncation */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .spotify-track-title:hover {
@@ -87,21 +118,28 @@
 .spotify-album-title,
 .spotify-playlist-title {
   font-size: 1rem;
+  font-weight: 600;
 }
 
-/* Artist and subtitle text */
+/* Artist and subtitle text with truncation */
 .spotify-track-artist,
 .spotify-album-artist,
 .spotify-playlist-owner {
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Album name in track display */
 .spotify-track-album {
   color: var(--text-muted);
   font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Duration and other metadata */
@@ -121,10 +159,10 @@
   font-size: 0.75rem;
 }
 
-/* Genres styling */
+/* Genres styling with better wrapping */
 .spotify-artist-genres {
   display: flex;
-  gap: 0.2rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
   margin-top: 0.3rem;
 }
@@ -132,18 +170,26 @@
 .spotify-genre-tag {
   background: var(--background-modifier-hover);
   color: var(--text-muted);
-  padding: 0.1rem 0.3rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 10px;
   font-size: 0.65rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-/* Description */
+/* Description with proper truncation */
 .spotify-playlist-description {
   color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 0.3rem;
-  line-height: 1.3;
+  line-height: 1.4;
+  
+  /* Multi-line truncation for description */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ─── List Layout Styles ─── */
@@ -166,21 +212,32 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ─── Mobile-specific adjustments ─── */
-@media (max-width: 480px) {
-  .spotify-track.spotify-card,
-  .spotify-album.spotify-card,
-  .spotify-artist.spotify-card,
-  .spotify-playlist.spotify-card {
-    text-align: center;
-  }
-  
-  .spotify-track-info,
-  .spotify-album-info,
-  .spotify-artist-info,
-  .spotify-playlist-info {
-    padding: 0.4rem 0.6rem;
-  }
+/* ─── Search Bar Styles ─── */
+.spotify-search-container {
+  margin: 1rem 0;
+  position: relative;
+}
+
+.spotify-search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 1rem;
+  font-family: var(--font-interface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.spotify-search-input:focus {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+.spotify-search-input::placeholder {
+  color: var(--text-muted);
 }
 
 /* ─── Dark mode ─── */
@@ -192,6 +249,11 @@
 .theme-dark .spotify-album.spotify-list,
 .theme-dark .spotify-artist.spotify-list,
 .theme-dark .spotify-playlist.spotify-list {
+  background: var(--background-secondary);
+  border-color: var(--border-color);
+}
+
+.theme-dark .spotify-search-input {
   background: var(--background-secondary);
   border-color: var(--border-color);
 }
@@ -212,12 +274,19 @@
   animation: fadeIn 0.3s ease;
 }
 
-/* ─── Responsive text scaling ─── */
+/* ─── Responsive adjustments ─── */
 @media (max-width: 600px) {
   .spotify-track-title,
   .spotify-album-title,
   .spotify-artist-title,
   .spotify-playlist-title {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+  }
+  
+  .spotify-track-info,
+  .spotify-album-info,
+  .spotify-artist-info,
+  .spotify-playlist-info {
+    padding: 0.6rem;
   }
 }
