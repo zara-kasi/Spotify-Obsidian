@@ -29,7 +29,7 @@ class SpotifyPlugin extends Plugin {
 
   // ===================== SETTINGS =====================
 async loadSettings() {
-  const defaults = {
+  const defaults = { 
     clientId: '',
     clientSecret: '',
     defaultUserId: '',
@@ -44,9 +44,20 @@ async loadSettings() {
     maxResults: 20,
     accessToken: null,
     refreshToken: null,
-    tokenExpiresAt: null // Remove trailing comma here
-  };
-  this.settings = Object.assign({}, defaults, await this.loadData());
+    tokenExpiresAt: null };
+  
+  const loaded = await this.loadData();
+  this.settings = Object.assign({}, defaults, loaded);
+  
+  // Validate numeric settings
+  this.settings.gridColumns = Math.max(1, Math.min(this.settings.gridColumns, 5));
+  this.settings.maxResults = Math.max(5, Math.min(this.settings.maxResults, 50));
+  this.settings.cacheTimeout = Math.max(60000, this.settings.cacheTimeout || 5 * 60 * 1000);
+  
+  // Validate layout setting
+  if (!['card', 'list', 'grid', 'inline'].includes(this.settings.defaultLayout)) {
+    this.settings.defaultLayout = 'card';
+  }
 }
 
   async saveSettings() {
