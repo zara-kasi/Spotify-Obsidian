@@ -1402,3 +1402,631 @@ validateConfig(config) {
   
   return true;
     }
+
+
+// Part 4: Rendering Methods for Individual Content Types
+// Add these methods to your SpotifyPlugin class
+
+/**
+ * Render a single track
+ */
+renderTrack(el, track, config) {
+  const trackDiv = document.createElement('div');
+  trackDiv.className = `spotify-track spotify-${config.layout}`;
+  
+  if (config.layout === 'card') {
+    this.renderTrackCard(trackDiv, track, config);
+  } else if (config.layout === 'inline') {
+    this.renderTrackInline(trackDiv, track, config);
+  } else {
+    this.renderTrackTable(trackDiv, track, config);
+  }
+  
+  el.appendChild(trackDiv);
+}
+
+/**
+ * Render track as card
+ */
+renderTrackCard(el, track, config) {
+  // Album artwork
+  if (track.album.images && track.album.images.length > 0 && this.settings.showAlbumArt) {
+    const img = document.createElement('img');
+    img.src = track.album.images[0].url;
+    img.alt = track.name;
+    img.className = 'spotify-track-image';
+    el.appendChild(img);
+  }
+  
+  // Content container
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'spotify-track-content';
+  
+  // Track name
+  const titleDiv = document.createElement('div');
+  titleDiv.className = 'spotify-track-title';
+  
+  const titleLink = document.createElement('a');
+  titleLink.href = track.external_urls.spotify;
+  titleLink.textContent = track.name;
+  titleLink.target = '_blank';
+  titleDiv.appendChild(titleLink);
+  
+  if (track.explicit) {
+    const explicitBadge = document.createElement('span');
+    explicitBadge.className = 'spotify-explicit-badge';
+    explicitBadge.textContent = 'E';
+    titleDiv.appendChild(explicitBadge);
+  }
+  
+  contentDiv.appendChild(titleDiv);
+  
+  // Artist
+  if (this.settings.showArtist) {
+    const artistDiv = document.createElement('div');
+    artistDiv.className = 'spotify-track-artist';
+    artistDiv.textContent = track.artists.map(a => a.name).join(', ');
+    contentDiv.appendChild(artistDiv);
+  }
+  
+  // Album
+  if (this.settings.showAlbum) {
+    const albumDiv = document.createElement('div');
+    albumDiv.className = 'spotify-track-album';
+    albumDiv.textContent = track.album.name;
+    contentDiv.appendChild(albumDiv);
+  }
+  
+  // Duration
+  if (this.settings.showDuration) {
+    const durationDiv = document.createElement('div');
+    durationDiv.className = 'spotify-track-duration';
+    durationDiv.textContent = this.formatDuration(track.duration_ms);
+    contentDiv.appendChild(durationDiv);
+  }
+  
+  // Popularity
+  if (this.settings.showPopularity) {
+    const popularityDiv = document.createElement('div');
+    popularityDiv.className = 'spotify-track-popularity';
+    popularityDiv.textContent = `${track.popularity}% popularity`;
+    contentDiv.appendChild(popularityDiv);
+  }
+  
+  // Preview player
+  if (track.preview_url && config.showPreview) {
+    const audioDiv = document.createElement('div');
+    audioDiv.className = 'spotify-track-preview';
+    
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = track.preview_url;
+    audio.preload = 'none';
+    
+    audioDiv.appendChild(audio);
+    contentDiv.appendChild(audioDiv);
+  }
+  
+  el.appendChild(contentDiv);
+}
+
+/**
+ * Render track inline
+ */
+renderTrackInline(el, track, config) {
+  el.className = 'spotify-track-inline';
+  
+  // Small album art
+  if (track.album.images && track.album.images.length > 0 && this.settings.showAlbumArt) {
+    const img = document.createElement('img');
+    img.src = track.album.images[0].url;
+    img.alt = track.name;
+    img.className = 'spotify-track-inline-image';
+    el.appendChild(img);
+  }
+  
+  // Track info
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'spotify-track-inline-info';
+  
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'spotify-track-inline-title';
+  titleSpan.textContent = track.name;
+  infoDiv.appendChild(titleSpan);
+  
+  if (this.settings.showArtist) {
+    const artistSpan = document.createElement('span');
+    artistSpan.className = 'spotify-track-inline-artist';
+    artistSpan.textContent = ` by ${track.artists.map(a => a.name).join(', ')}`;
+    infoDiv.appendChild(artistSpan);
+  }
+  
+  el.appendChild(infoDiv);
+  
+  // Open in Spotify link
+  const linkDiv = document.createElement('div');
+  linkDiv.className = 'spotify-track-inline-link';
+  
+  const link = document.createElement('a');
+  link.href = track.external_urls.spotify;
+  link.textContent = '♪ Open in Spotify';
+  link.target = '_blank';
+  linkDiv.appendChild(link);
+  
+  el.appendChild(linkDiv);
+}
+
+/**
+ * Render album
+ */
+renderAlbum(el, album, config) {
+  const albumDiv = document.createElement('div');
+  albumDiv.className = `spotify-album spotify-${config.layout}`;
+  
+  // Album header
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'spotify-album-header';
+  
+  // Album artwork
+  if (album.images && album.images.length > 0 && this.settings.showAlbumArt) {
+    const img = document.createElement('img');
+    img.src = album.images[0].url;
+    img.alt = album.name;
+    img.className = 'spotify-album-image';
+    headerDiv.appendChild(img);
+  }
+  
+  // Album info
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'spotify-album-info';
+  
+  const titleLink = document.createElement('a');
+  titleLink.href = album.external_urls.spotify;
+  titleLink.textContent = album.name;
+  titleLink.target = '_blank';
+  titleLink.className = 'spotify-album-title';
+  infoDiv.appendChild(titleLink);
+  
+  if (this.settings.showArtist) {
+    const artistDiv = document.createElement('div');
+    artistDiv.className = 'spotify-album-artist';
+    artistDiv.textContent = album.artists.map(a => a.name).join(', ');
+    infoDiv.appendChild(artistDiv);
+  }
+  
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'spotify-album-meta';
+  
+  if (album.release_date) {
+    const yearSpan = document.createElement('span');
+    yearSpan.textContent = new Date(album.release_date).getFullYear();
+    metaDiv.appendChild(yearSpan);
+  }
+  
+  const tracksSpan = document.createElement('span');
+  tracksSpan.textContent = `${album.total_tracks} tracks`;
+  metaDiv.appendChild(tracksSpan);
+  
+  infoDiv.appendChild(metaDiv);
+  headerDiv.appendChild(infoDiv);
+  albumDiv.appendChild(headerDiv);
+  
+  // Track listing
+  if (album.tracks && album.tracks.items && config.showDetails !== false) {
+    const tracksDiv = document.createElement('div');
+    tracksDiv.className = 'spotify-album-tracks';
+    
+    const tracksTitle = document.createElement('h4');
+    tracksTitle.textContent = 'Tracks';
+    tracksDiv.appendChild(tracksTitle);
+    
+    const tracksList = document.createElement('div');
+    tracksList.className = 'spotify-tracks-list';
+    
+    album.tracks.items.forEach((track, index) => {
+      const trackDiv = document.createElement('div');
+      trackDiv.className = 'spotify-track-item';
+      
+      const numberSpan = document.createElement('span');
+      numberSpan.className = 'spotify-track-number';
+      numberSpan.textContent = index + 1;
+      trackDiv.appendChild(numberSpan);
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'spotify-track-name';
+      nameSpan.textContent = track.name;
+      trackDiv.appendChild(nameSpan);
+      
+      if (this.settings.showDuration) {
+        const durationSpan = document.createElement('span');
+        durationSpan.className = 'spotify-track-duration';
+        durationSpan.textContent = this.formatDuration(track.duration_ms);
+        trackDiv.appendChild(durationSpan);
+      }
+      
+      tracksList.appendChild(trackDiv);
+    });
+    
+    tracksDiv.appendChild(tracksList);
+    albumDiv.appendChild(tracksDiv);
+  }
+  
+  el.appendChild(albumDiv);
+}
+
+/**
+ * Render artist
+ */
+renderArtist(el, artist, config) {
+  const artistDiv = document.createElement('div');
+  artistDiv.className = `spotify-artist spotify-${config.layout}`;
+  
+  // Artist header
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'spotify-artist-header';
+  
+  // Artist image
+  if (artist.images && artist.images.length > 0 && this.settings.showAlbumArt) {
+    const img = document.createElement('img');
+    img.src = artist.images[0].url;
+    img.alt = artist.name;
+    img.className = 'spotify-artist-image';
+    headerDiv.appendChild(img);
+  }
+  
+  // Artist info
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'spotify-artist-info';
+  
+  const titleLink = document.createElement('a');
+  titleLink.href = artist.external_urls.spotify;
+  titleLink.textContent = artist.name;
+  titleLink.target = '_blank';
+  titleLink.className = 'spotify-artist-title';
+  infoDiv.appendChild(titleLink);
+  
+  // Followers
+  const followersDiv = document.createElement('div');
+  followersDiv.className = 'spotify-artist-followers';
+  followersDiv.textContent = `${artist.followers.total.toLocaleString()} followers`;
+  infoDiv.appendChild(followersDiv);
+  
+  // Genres
+  if (this.settings.showGenres && artist.genres && artist.genres.length > 0) {
+    const genresDiv = document.createElement('div');
+    genresDiv.className = 'spotify-artist-genres';
+    genresDiv.textContent = artist.genres.join(', ');
+    infoDiv.appendChild(genresDiv);
+  }
+  
+  // Popularity
+  if (this.settings.showPopularity) {
+    const popularityDiv = document.createElement('div');
+    popularityDiv.className = 'spotify-artist-popularity';
+    popularityDiv.textContent = `${artist.popularity}% popularity`;
+    infoDiv.appendChild(popularityDiv);
+  }
+  
+  headerDiv.appendChild(infoDiv);
+  artistDiv.appendChild(headerDiv);
+  
+  // Top tracks
+  if (artist.topTracks && artist.topTracks.length > 0 && config.showDetails !== false) {
+    const topTracksDiv = document.createElement('div');
+    topTracksDiv.className = 'spotify-artist-top-tracks';
+    
+    const tracksTitle = document.createElement('h4');
+    tracksTitle.textContent = 'Top Tracks';
+    topTracksDiv.appendChild(tracksTitle);
+    
+    const tracksList = document.createElement('div');
+    tracksList.className = 'spotify-tracks-list';
+    
+    artist.topTracks.slice(0, 10).forEach((track, index) => {
+      const trackDiv = document.createElement('div');
+      trackDiv.className = 'spotify-track-item';
+      
+      const numberSpan = document.createElement('span');
+      numberSpan.className = 'spotify-track-number';
+      numberSpan.textContent = index + 1;
+      trackDiv.appendChild(numberSpan);
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'spotify-track-name';
+      nameSpan.textContent = track.name;
+      trackDiv.appendChild(nameSpan);
+      
+      if (this.settings.showDuration) {
+        const durationSpan = document.createElement('span');
+        durationSpan.className = 'spotify-track-duration';
+        durationSpan.textContent = this.formatDuration(track.duration_ms);
+        trackDiv.appendChild(durationSpan);
+      }
+      
+      tracksList.appendChild(trackDiv);
+    });
+    
+    topTracksDiv.appendChild(tracksList);
+    artistDiv.appendChild(topTracksDiv);
+  }
+  
+  // Albums
+  if (artist.albums && artist.albums.length > 0 && config.showDetails !== false) {
+    const albumsDiv = document.createElement('div');
+    albumsDiv.className = 'spotify-artist-albums';
+    
+    const albumsTitle = document.createElement('h4');
+    albumsTitle.textContent = 'Albums';
+    albumsDiv.appendChild(albumsTitle);
+    
+    const albumsGrid = document.createElement('div');
+    albumsGrid.className = 'spotify-albums-grid';
+    
+    artist.albums.slice(0, 8).forEach(album => {
+      const albumDiv = document.createElement('div');
+      albumDiv.className = 'spotify-album-item';
+      
+      if (album.images && album.images.length > 0) {
+        const img = document.createElement('img');
+        img.src = album.images[0].url;
+        img.alt = album.name;
+        img.className = 'spotify-album-item-image';
+        albumDiv.appendChild(img);
+      }
+      
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'spotify-album-item-name';
+      nameDiv.textContent = album.name;
+      albumDiv.appendChild(nameDiv);
+      
+      const yearDiv = document.createElement('div');
+      yearDiv.className = 'spotify-album-item-year';
+      yearDiv.textContent = album.release_date ? new Date(album.release_date).getFullYear() : '';
+      albumDiv.appendChild(yearDiv);
+      
+      albumsGrid.appendChild(albumDiv);
+    });
+    
+    albumsDiv.appendChild(albumsGrid);
+    artistDiv.appendChild(albumsDiv);
+  }
+  
+  el.appendChild(artistDiv);
+}
+
+/**
+ * Render playlist
+ */
+renderPlaylist(el, playlist, config) {
+  const playlistDiv = document.createElement('div');
+  playlistDiv.className = `spotify-playlist spotify-${config.layout}`;
+  
+  // Playlist header
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'spotify-playlist-header';
+  
+  // Playlist image
+  if (playlist.images && playlist.images.length > 0 && this.settings.showAlbumArt) {
+    const img = document.createElement('img');
+    img.src = playlist.images[0].url;
+    img.alt = playlist.name;
+    img.className = 'spotify-playlist-image';
+    headerDiv.appendChild(img);
+  }
+  
+  // Playlist info
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'spotify-playlist-info';
+  
+  const titleLink = document.createElement('a');
+  titleLink.href = playlist.external_urls.spotify;
+  titleLink.textContent = playlist.name;
+  titleLink.target = '_blank';
+  titleLink.className = 'spotify-playlist-title';
+  infoDiv.appendChild(titleLink);
+  
+  if (playlist.description) {
+    const descDiv = document.createElement('div');
+    descDiv.className = 'spotify-playlist-description';
+    descDiv.textContent = playlist.description;
+    infoDiv.appendChild(descDiv);
+  }
+  
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'spotify-playlist-meta';
+  
+  const ownerSpan = document.createElement('span');
+  ownerSpan.textContent = `by ${playlist.owner.display_name}`;
+  metaDiv.appendChild(ownerSpan);
+  
+  const tracksSpan = document.createElement('span');
+  tracksSpan.textContent = `${playlist.tracks.total} tracks`;
+  metaDiv.appendChild(tracksSpan);
+  
+  infoDiv.appendChild(metaDiv);
+  headerDiv.appendChild(infoDiv);
+  playlistDiv.appendChild(headerDiv);
+  
+  // Track listing
+  if (playlist.tracks && playlist.tracks.items && config.showDetails !== false) {
+    const tracksDiv = document.createElement('div');
+    tracksDiv.className = 'spotify-playlist-tracks';
+    
+    const tracksTitle = document.createElement('h4');
+    tracksTitle.textContent = 'Tracks';
+    tracksDiv.appendChild(tracksTitle);
+    
+    const tracksList = document.createElement('div');
+    tracksList.className = 'spotify-tracks-list';
+    
+    const tracksToShow = playlist.tracks.items.slice(0, 20);
+    
+    tracksToShow.forEach((item, index) => {
+      if (!item.track) return;
+      
+      const trackDiv = document.createElement('div');
+      trackDiv.className = 'spotify-track-item';
+      
+      const numberSpan = document.createElement('span');
+      numberSpan.className = 'spotify-track-number';
+      numberSpan.textContent = index + 1;
+      trackDiv.appendChild(numberSpan);
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'spotify-track-name';
+      nameSpan.textContent = item.track.name;
+      trackDiv.appendChild(nameSpan);
+      
+      if (this.settings.showArtist) {
+        const artistSpan = document.createElement('span');
+        artistSpan.className = 'spotify-track-artist';
+        artistSpan.textContent = item.track.artists.map(a => a.name).join(', ');
+        trackDiv.appendChild(artistSpan);
+      }
+      
+      if (this.settings.showDuration) {
+        const durationSpan = document.createElement('span');
+        durationSpan.className = 'spotify-track-duration';
+        durationSpan.textContent = this.formatDuration(item.track.duration_ms);
+        trackDiv.appendChild(durationSpan);
+      }
+      
+      tracksList.appendChild(trackDiv);
+    });
+    
+    tracksDiv.appendChild(tracksList);
+    playlistDiv.appendChild(tracksDiv);
+  }
+  
+  el.appendChild(playlistDiv);
+}
+
+/**
+ * Render user profile
+ */
+renderUserProfile(el, user) {
+  const userDiv = document.createElement('div');
+  userDiv.className = 'spotify-user-profile';
+  
+  // User image
+  if (user.images && user.images.length > 0) {
+    const img = document.createElement('img');
+    img.src = user.images[0].url;
+    img.alt = user.display_name;
+    img.className = 'spotify-user-image';
+    userDiv.appendChild(img);
+  }
+  
+  // User info
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'spotify-user-info';
+  
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'spotify-user-name';
+  nameDiv.textContent = user.display_name;
+  infoDiv.appendChild(nameDiv);
+  
+  const followersDiv = document.createElement('div');
+  followersDiv.className = 'spotify-user-followers';
+  followersDiv.textContent = `${user.followers.total.toLocaleString()} followers`;
+  infoDiv.appendChild(followersDiv);
+  
+  const countryDiv = document.createElement('div');
+  countryDiv.className = 'spotify-user-country';
+  countryDiv.textContent = user.country;
+  infoDiv.appendChild(countryDiv);
+  
+  userDiv.appendChild(infoDiv);
+  el.appendChild(userDiv);
+}
+
+/**
+ * Render top tracks
+ */
+renderTopTracks(el, data, config) {
+  const tracksDiv = document.createElement('div');
+  tracksDiv.className = 'spotify-top-tracks';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Top Tracks';
+  tracksDiv.appendChild(title);
+  
+  const tracksList = document.createElement('div');
+  tracksList.className = 'spotify-tracks-list';
+  
+  data.items.forEach((track, index) => {
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'spotify-track-item';
+    
+    const numberSpan = document.createElement('span');
+    numberSpan.className = 'spotify-track-number';
+    numberSpan.textContent = index + 1;
+    trackDiv.appendChild(numberSpan);
+    
+    if (track.album.images && track.album.images.length > 0) {
+      const img = document.createElement('img');
+      img.src = track.album.images[0].url;
+      img.alt = track.name;
+      img.className = 'spotify-track-mini-image';
+      trackDiv.appendChild(img);
+    }
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'spotify-track-name';
+    nameSpan.textContent = track.name;
+    trackDiv.appendChild(nameSpan);
+    
+    const artistSpan = document.createElement('span');
+    artistSpan.className = 'spotify-track-artist';
+    artistSpan.textContent = track.artists.map(a => a.name).join(', ');
+    trackDiv.appendChild(artistSpan);
+    
+    tracksList.appendChild(trackDiv);
+  });
+  
+  tracksDiv.appendChild(tracksList);
+  el.appendChild(tracksDiv);
+}
+
+/**
+ * Render top artists
+ */
+renderTopArtists(el, data, config) {
+  const artistsDiv = document.createElement('div');
+  artistsDiv.className = 'spotify-top-artists';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Top Artists';
+  artistsDiv.appendChild(title);
+  
+  const artistsGrid = document.createElement('div');
+  artistsGrid.className = 'spotify-artists-grid';
+  
+  data.items.forEach((artist, index) => {
+    const artistDiv = document.createElement('div');
+    artistDiv.className = 'spotify-artist-item';
+    
+    if (artist.images && artist.images.length > 0) {
+      const img = document.createElement('img');
+      img.src = artist.images[0].url;
+      img.alt = artist.name;
+      img.className = 'spotify-artist-item-image';
+      artistDiv.appendChild(img);
+    }
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'spotify-artist-item-name';
+    nameDiv.textContent = artist.name;
+    artistDiv.appendChild(nameDiv);
+    
+    const rankDiv = document.createElement('div');
+    rankDiv.className = 'spotify-artist-item-rank';
+    rankDiv.textContent = `#${index + 1}`;
+    artistDiv.appendChild(rankDiv);
+    
+    artistsGrid.appendChild(artistDiv);
+  });
+  
+  artistsDiv.appendChild(artistsGrid);
+  el.appendChild(artistsDiv);
+}
